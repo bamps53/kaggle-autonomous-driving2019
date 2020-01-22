@@ -78,6 +78,7 @@ def run(config_file, fold=0, device_id=0, ensemble=False):
     test = pd.read_csv(config.data.sample_submission_path)
     test['PredictionString'] = predictions
     out_path = config.work_dir + '/submission.csv'
+    test.to_csv(out_path, index=False)
     postprocess(out_path)
 
 
