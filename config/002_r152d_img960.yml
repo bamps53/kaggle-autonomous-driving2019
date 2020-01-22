@@ -1,0 +1,57 @@
+work_dir: 'results/002_r152d_img960'
+
+data:
+  train_df_path: 'data/img960_df.csv'
+  train_dir: '../input/pku-autonomous-driving/resized_images'
+  test_dir: '../input/pku-autonomous-driving/test_images'
+  features: ['pitch_cos', 'pitch_sin', 'z']
+  pitch_pos: [1,2]
+  z_pos: [3]
+  height: 832
+  width: 2080
+  model_scale: 4
+  params:
+    idx_fold: -1
+    num_folds: 5
+
+model:
+  encoder: 'r152d'
+
+train:
+  batch_size: 1
+  num_epochs: 50
+  early_stop_patience: 5
+  accumulation_size: 16
+  horizontal_flip: True
+
+test:
+  batch_size: 1
+  confidence_threshold: 0.1
+  distance_threshold: 4
+
+transforms:
+  train:
+    Noise: True
+    Contrast: True
+
+loss:
+  name: "MaskDepthPitch"
+  params:
+    loss_type: "L1"
+    reduce: 'mean'
+    heatmap_weight: 100.0
+    z_weight: 20.0
+    pitch_weight: 1.0
+
+optimizer:
+  name: 'Adam'
+  params:
+    encoder_lr: 1.0e-4
+    decoder_lr: 1.0e-4
+    weight_decay: 1.0e-4
+
+scheduler:
+  name: 'plateau'
+
+num_workers: 0
+device: 'cuda'

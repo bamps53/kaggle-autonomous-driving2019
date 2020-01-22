@@ -1,0 +1,12 @@
+*.pth
+*.pkl
+data/
+results/
+train_log/
+valid_log/
+core
+obsolete/
+__pycache__/
+output/
+.ipynb_checkpoints
+.vscode
