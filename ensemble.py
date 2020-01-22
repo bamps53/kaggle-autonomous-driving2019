@@ -51,8 +51,8 @@ def run(config_file, fold=0, device_id=0):
         for i, (batch_fnames, batch_images) in enumerate(tqdm(testloader)):
             batch_images = batch_images.to(config.device)
             batch_preds = model(batch_images.to(config.device))
-            batch_preds[:,0] = torch.sigmoid(batch_preds[:,0])
-            batch_preds[:,z_pos] = depth_transform(batch_preds[:,z_pos])
+            batch_preds[:, 0] = torch.sigmoid(batch_preds[:, 0])
+            batch_preds[:, z_pos] = depth_transform(batch_preds[:, z_pos])
             batch_preds = batch_preds.data.cpu().numpy()
 
             for preds in batch_preds:
@@ -62,11 +62,11 @@ def run(config_file, fold=0, device_id=0):
                     img_size=(config.data.height, config.data.width),
                     confidence_threshold=config.test.confidence_threshold,
                     distance_threshold=config.test.distance_threshold,
-                    )
+                )
                 s = coords2str(coords)
                 predictions.append(s)
 
-    #---------------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------------
     # submission
     # ------------------------------------------------------------------------------------------------------------
     test = pd.read_csv(config.data.sample_submission_path)

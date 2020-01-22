@@ -6,7 +6,8 @@ import cv2
 from math import sin, cos
 
 from utils.postprocess import clear_duplicates, extract_coords
-from utils import CAMERA_MATRIX,get_img_coords
+from utils import CAMERA_MATRIX, get_img_coords
+
 
 def normalize(img):
     img = img - img.min()
@@ -16,7 +17,7 @@ def normalize(img):
 
 def show_image(img):
     img = normalize(img)
-    plt.imshow(np.transpose(img,[1,2,0]))
+    plt.imshow(np.transpose(img, [1, 2, 0]))
     plt.show()
 
 
@@ -34,7 +35,6 @@ def show_image_with_str(image_id, pred_str, mode='train', names=['yaw', 'pitch',
     plt.show()
 
 
-
 # convert euler angle to rotation matrix
 def euler_to_Rot(yaw, pitch, roll):
     Y = np.array([[cos(yaw), 0, sin(yaw)],
@@ -48,6 +48,7 @@ def euler_to_Rot(yaw, pitch, roll):
                   [0, 0, 1]])
     return np.dot(Y, np.dot(P, R))
 
+
 def draw_line(image, points):
     color = (255, 0, 0)
     cv2.line(image, tuple(points[0][:2]), tuple(points[3][:2]), color, 16)
@@ -56,10 +57,12 @@ def draw_line(image, points):
     cv2.line(image, tuple(points[2][:2]), tuple(points[3][:2]), color, 16)
     return image
 
+
 def draw_points(image, points):
     for (p_x, p_y, p_z) in points:
         cv2.circle(image, (p_x, p_y), int(1000 / p_z), (0, 255, 0), -1)
     return image
+
 
 def visualize(image_id, coords, mode='train'):
     # You will also need functions from the previous cells
@@ -100,20 +103,23 @@ def visualize(image_id, coords, mode='train'):
         img = draw_points(img, img_cor_points[-1:])
     return img
 
+
 def check_validloader_with_model(validloader, features, model, num_images=10, show_mask=False):
     num_repeat = int(num_images/validloader.batch_size)+1
     vl = iter(validloader)
     for i in range(num_repeat):
         batch_images, batch_mask_regr, batch_image_ids = next(vl)
         batch_preds = model(batch_images.to(config.device))
-        batch_preds[:,0] = torch.sigmoid(batch_preds[:,0])
+        batch_preds[:, 0] = torch.sigmoid(batch_preds[:, 0])
         batch_images = batch_images.data.cpu().numpy()
         batch_preds = batch_preds.data.cpu().numpy()
         batch_mask_regr = batch_mask_regr.data.cpu().numpy()
 
         for img, mask, pred, image_id in zip(batch_images, batch_mask_regr, batch_preds, batch_image_ids):
-            mask_coords = extract_coords(mask, features=features, img_size=(img.shape[1], img.shape[2]))
-            pred_coords = extract_coords(pred, features=features, img_size=(img.shape[1], img.shape[2]))
+            mask_coords = extract_coords(
+                mask, features=features, img_size=(img.shape[1], img.shape[2]))
+            pred_coords = extract_coords(
+                pred, features=features, img_size=(img.shape[1], img.shape[2]))
             plt.imshow(visualize(image_id, mask_coords))
             plt.show()
             plt.imshow(visualize(image_id, pred_coords))
@@ -121,6 +127,7 @@ def check_validloader_with_model(validloader, features, model, num_images=10, sh
             if show_mask:
                 plt.imshow(pred[0])
                 plt.show()
+
 
 def check_validloader(validloader, features, num_images=10, show_mask=False):
     num_repeat = int(num_images/validloader.batch_size)+1
@@ -131,9 +138,10 @@ def check_validloader(validloader, features, num_images=10, show_mask=False):
         batch_mask_regr = batch_mask_regr.data.cpu().numpy()
 
         for img, mask_regr, image_id in zip(batch_images, batch_mask_regr, batch_image_ids):
-            mask_coords = extract_coords(mask_regr, features=features, img_size=(img.shape[1], img.shape[2]))
+            mask_coords = extract_coords(
+                mask_regr, features=features, img_size=(img.shape[1], img.shape[2]))
             img_with_mask = visualize(image_id, mask_coords)
-            #print(img_with_mask.shape)
+            # print(img_with_mask.shape)
             show_image(img)
             print('original image and annotation')
             plt.imshow(img_with_mask)

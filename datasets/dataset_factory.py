@@ -18,8 +18,8 @@ def convert_image_id(image_id):
 
 
 class TrainDataset(Dataset):
-    def __init__(self, df, data_dir, features, transforms, horizontal_flip, 
-                img_size, model_scale, return_fnames=False):
+    def __init__(self, df, data_dir, features, transforms, horizontal_flip,
+                 img_size, model_scale, return_fnames=False):
         self.df = df
         self.data_dir = data_dir
         self.features = features
@@ -48,9 +48,11 @@ class TrainDataset(Dataset):
 
         annotations = self.df[self.df.image_id == image_id]
         # create label
-        mask_size = (self.img_size[0]//self.model_scale, self.img_size[1]//self.model_scale)
+        mask_size = (self.img_size[0]//self.model_scale,
+                     self.img_size[1]//self.model_scale)
         mask = np.zeros(mask_size, dtype='float32')
-        regr = np.zeros([mask_size[0], mask_size[1], self.num_features], dtype='float32')
+        regr = np.zeros([mask_size[0], mask_size[1],
+                         self.num_features], dtype='float32')
         for _, ann in annotations.iterrows():
             r = int(ann['r_heatmap'])
             c = int(ann['c_heatmap'])
@@ -58,24 +60,27 @@ class TrainDataset(Dataset):
                 ann['pitch_sin'] *= -1.0
                 ann['roll'] *= -1.0
                 ann['x'] *= -1.0
-            features = np.array([ann[col] for col in self.features]).astype(float)
-            features = features.reshape(1,1,len(features))
+            features = np.array([ann[col]
+                                 for col in self.features]).astype(float)
+            features = features.reshape(1, 1, len(features))
 
             if 0 <= r < mask_size[0] and 0 <= c < mask_size[1]:
-                kernel_size=3
-                lower_r = max(r-1,0)
-                upper_r = min(r+2,mask.shape[0])
-                left_c = max(c-1,0)
-                right_c = min(c+2,mask.shape[1])
-                kernel = np.float32([[0.5, 0.75, 0.5], [0.75, 1.0, 0.75], [0.5, 0.75, 0.5]])
-                kernel = kernel[lower_r-(r-1):kernel_size-((r+2)-upper_r),left_c-(c-1):kernel_size-((c+2)-right_c)]
+                kernel_size = 3
+                lower_r = max(r-1, 0)
+                upper_r = min(r+2, mask.shape[0])
+                left_c = max(c-1, 0)
+                right_c = min(c+2, mask.shape[1])
+                kernel = np.float32(
+                    [[0.5, 0.75, 0.5], [0.75, 1.0, 0.75], [0.5, 0.75, 0.5]])
+                kernel = kernel[lower_r-(r-1):kernel_size-((r+2)-upper_r),
+                                left_c-(c-1):kernel_size-((c+2)-right_c)]
                 mask[lower_r:upper_r, left_c:right_c] = kernel
                 regr[lower_r:upper_r, left_c:right_c] = features
 
-        mask = mask.reshape(mask.shape[0],mask.shape[1],1)
-        mask_regr = np.concatenate([mask, regr],axis=2)
+        mask = mask.reshape(mask.shape[0], mask.shape[1], 1)
+        mask_regr = np.concatenate([mask, regr], axis=2)
         if flip:
-            mask_regr = np.array(mask_regr[:,::-1])
+            mask_regr = np.array(mask_regr[:, ::-1])
 
         augmented = self.transforms(image=img, mask=mask_regr)
         img = augmented['image']
@@ -90,6 +95,7 @@ class TrainDataset(Dataset):
 
     def __len__(self):
         return len(self.fnames)
+
 
 class TestDataset(Dataset):
     def __init__(self, df, data_dir, transforms, img_size):
@@ -154,16 +160,15 @@ def make_loader(
             is_shuffle = False
 
         image_dataset = TrainDataset(
-            df=df, 
-            data_dir=data_dir, 
+            df=df,
+            data_dir=data_dir,
             features=features,
-            transforms=transforms, 
-            horizontal_flip=horizontal_flip, 
-            img_size=img_size, 
-            model_scale=model_scale, 
-            return_fnames=return_fnames, 
-            )
-
+            transforms=transforms,
+            horizontal_flip=horizontal_flip,
+            img_size=img_size,
+            model_scale=model_scale,
+            return_fnames=return_fnames,
+        )
 
     return DataLoader(
         image_dataset,

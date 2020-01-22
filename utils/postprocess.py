@@ -8,12 +8,13 @@ import jpeg4py as jpeg
 
 def read_mask(image_id, mode):
     image_id = image_id + '.jpg'
-    filter_path = os.path.join('../input/pku-autonomous-driving/{}_masks/'.format(mode), image_id)
+    filter_path = os.path.join(
+        '../input/pku-autonomous-driving/{}_masks/'.format(mode), image_id)
     if os.path.exists(filter_path):
-        return jpeg.JPEG(str(filter_path)).decode()[:,:,0]
-        #return cv2.imread(str(filter_path))[:,:,0]
+        return jpeg.JPEG(str(filter_path)).decode()[:, :, 0]
+        # return cv2.imread(str(filter_path))[:,:,0]
     else:
-        return np.zeros((2710, 3384),dtype='uint8')
+        return np.zeros((2710, 3384), dtype='uint8')
 
 
 def filter_masked_pred(row):
@@ -24,23 +25,28 @@ def filter_masked_pred(row):
         return row
     else:
         image_filter = read_mask(image_id, mode='test')
-        coords = str2coords(s,names=['yaw', 'pitch', 'roll', 'x', 'y', 'z', 'confidence'])
-        xs, ys = get_img_coords(s,names=['yaw', 'pitch', 'roll', 'x', 'y', 'z', 'confidence'])
+        coords = str2coords(
+            s, names=['yaw', 'pitch', 'roll', 'x', 'y', 'z', 'confidence'])
+        xs, ys = get_img_coords(
+            s, names=['yaw', 'pitch', 'roll', 'x', 'y', 'z', 'confidence'])
 
         for x, y, coord in zip(xs, ys, coords):
             x, y = int(x), int(y)
             if image_filter[y, x] < 200:
                 new_coords.append(coord)
-        row.PredictionString = coords2str(new_coords, names=['yaw', 'pitch', 'roll', 'x', 'y', 'z', 'confidence'])    
+        row.PredictionString = coords2str(
+            new_coords, names=['yaw', 'pitch', 'roll', 'x', 'y', 'z', 'confidence'])
         return row
 
 
 def postprocess(sub_path):
     sub = pd.read_csv(sub_path)
     sub['PredictionString'].fillna('', inplace=True)
-    print('before filtering:', sub.PredictionString.map(lambda x: x.count(' ')//7+1).sum())
+    print('before filtering:', sub.PredictionString.map(
+        lambda x: x.count(' ')//7+1).sum())
     sub = sub.swifter.apply(filter_masked_pred, axis=1)
-    print('after filtering:', sub.PredictionString.map(lambda x: x.count(' ')//7+1).sum())
+    print('after filtering:', sub.PredictionString.map(
+        lambda x: x.count(' ')//7+1).sum())
     out_path = sub_path.split('.csv')[0] + '_filtered.csv'
     sub.to_csv(out_path, index=False)
 
@@ -71,9 +77,10 @@ def rcz2xyz(r, c, z, before_img_size=(2710, 3384), after_img_size=(256, 640), mo
     c = c * model_scale
     c = c / (after_width / before_width)
 
-    hwz = np.array([c * z , r * z, z]).reshape(3,1)
+    hwz = np.array([c * z, r * z, z]).reshape(3, 1)
     x, y, z = list(np.dot(CAMERA_MATRIX_inv, hwz).squeeze())
     return x, y, z
+
 
 def extract_coords(
     prediction,
@@ -82,7 +89,7 @@ def extract_coords(
     distance_threshold=2,
     img_size=(256, 640),
     model_scale=4,
-    ):
+):
     heatmap = prediction[0]
     regr_output = prediction[1:]
     points = np.argwhere(heatmap > confidence_threshold)
@@ -92,9 +99,10 @@ def extract_coords(
         regr_dict = _regr_back(regr_dict)
         regr_dict['confidence'] = heatmap[r, c]
         regr_dict['x'], regr_dict['y'], regr_dict['z'] = \
-                    rcz2xyz(r, c, regr_dict['z'], after_img_size=img_size, model_scale=model_scale)
-        regr_dict['roll'] = -3.090270 # train set median
-        regr_dict['yaw'] = 0.155064 # train set median
+            rcz2xyz(
+                r, c, regr_dict['z'], after_img_size=img_size, model_scale=model_scale)
+        regr_dict['roll'] = -3.090270  # train set median
+        regr_dict['yaw'] = 0.155064  # train set median
         if regr_dict['y'] > 0 and regr_dict['z'] > 0:
             coords.append(regr_dict)
 
@@ -104,8 +112,9 @@ def extract_coords(
 
 def _regr_back(regr_dict):
     regr_dict['z'] = regr_dict['z'] * 100
-    pitch_sin = regr_dict['pitch_sin'] / np.sqrt(regr_dict['pitch_sin']**2 + regr_dict['pitch_cos']**2)
-    pitch_cos = regr_dict['pitch_cos'] / np.sqrt(regr_dict['pitch_sin']**2 + regr_dict['pitch_cos']**2)
+    pitch_sin = regr_dict['pitch_sin'] / \
+        np.sqrt(regr_dict['pitch_sin']**2 + regr_dict['pitch_cos']**2)
+    pitch_cos = regr_dict['pitch_cos'] / \
+        np.sqrt(regr_dict['pitch_sin']**2 + regr_dict['pitch_cos']**2)
     regr_dict['pitch'] = np.arccos(pitch_cos) * np.sign(pitch_sin)
     return regr_dict
-

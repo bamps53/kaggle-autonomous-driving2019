@@ -31,6 +31,7 @@ def dict_to_json(dict_obj: dict, save_path: Union[str, Path]):
     json.dump(dict_obj, f, indent=4, cls=MyEncoder, ensure_ascii=False)
     f.close()
 
+
 CAMERA_MATRIX = np.array([[2304.5479, 0,  1686.2379],
                           [0, 2305.8757, 1354.9849],
                           [0, 0, 1]], dtype=np.float32)
@@ -45,12 +46,14 @@ def str2coords(s, names=['id', 'yaw', 'pitch', 'roll', 'x', 'y', 'z']):
             coords[-1]['id'] = int(coords[-1]['id'])
     return coords
 
+
 def coords2str(coords, names=['yaw', 'pitch', 'roll', 'x', 'y', 'z', 'confidence']):
     s = []
     for c in coords:
         for n in names:
             s.append(str(c.get(n, 0)))
     return ' '.join(s)
+
 
 def get_img_coords(s, names):
     '''
@@ -69,7 +72,5 @@ def get_img_coords(s, names):
     img_p[:, 1] /= img_p[:, 2]
     img_xs = img_p[:, 0]
     img_ys = img_p[:, 1]
-    img_zs = img_p[:, 2] # z = Distance from the camera
+    img_zs = img_p[:, 2]  # z = Distance from the camera
     return img_xs, img_ys
-
-

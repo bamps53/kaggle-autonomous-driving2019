@@ -8,7 +8,8 @@ from scipy.spatial.transform import Rotation as R
 from multiprocessing import Pool
 from functools import partial
 
-def TranslationDistance(p,g, abs_dist = False):
+
+def TranslationDistance(p, g, abs_dist=False):
     dx = p['x'] - g['x']
     dy = p['y'] - g['y']
     dz = p['z'] - g['z']
@@ -20,9 +21,10 @@ def TranslationDistance(p,g, abs_dist = False):
         diff = diff1/diff0
     return diff
 
+
 def RotationDistance(p, g):
-    true=[ g['pitch'] ,g['yaw'] ,g['roll'] ]
-    pred=[ p['pitch'] ,p['yaw'] ,p['roll'] ]
+    true = [g['pitch'], g['yaw'], g['roll']]
+    pred = [p['pitch'], p['yaw'], p['roll']]
     q1 = R.from_euler('xyz', true)
     q2 = R.from_euler('xyz', pred)
     diff = R.inv(q2) * q1
@@ -30,13 +32,14 @@ def RotationDistance(p, g):
     W = (acos(W)*360)/pi
     if W > 180:
         W = 360 - W
-    return W    
+    return W
+
 
 def calc_accuracy(result_flg, result_dist):
     result_flg = np.array(result_flg)
     result_dist = np.array(result_dist)
     all_accuracy = np.mean(result_dist)
-    negative_accuracy = np.mean(result_dist[result_flg==0])
+    negative_accuracy = np.mean(result_dist[result_flg == 0])
     return all_accuracy, negative_accuracy
 
 
@@ -48,7 +51,7 @@ def get_score(th_idx, org_targets, org_predictions, n_gt, n_pr, keep_gt=False, r
     thre_tr_dist = thres_tr_list[th_idx]
     thre_ro_dist = thres_ro_list[th_idx]
 
-    result_flg = [] # 1 for TP, 0 for FP
+    result_flg = []  # 1 for TP, 0 for FP
     result_dist = []
     result_rotate = []
     scores = []
@@ -60,10 +63,10 @@ def get_score(th_idx, org_targets, org_predictions, n_gt, n_pr, keep_gt=False, r
             min_tr_dist = MAX_VAL
             min_idx = -1
             for idx, gcar in enumerate(target):
-                tr_dist = TranslationDistance(pcar,gcar)
+                tr_dist = TranslationDistance(pcar, gcar)
                 if tr_dist < min_tr_dist:
                     min_tr_dist = tr_dist
-                    min_ro_dist = RotationDistance(pcar,gcar)
+                    min_ro_dist = RotationDistance(pcar, gcar)
                     min_idx = idx
 
             # set the result
@@ -97,8 +100,10 @@ def get_score(th_idx, org_targets, org_predictions, n_gt, n_pr, keep_gt=False, r
             ap = average_precision_score(result_flg, scores)
         score = ap * recall
         f1 = 2 * (recall * precision) / (recall + precision)
-        f1_dist = 2 * (recall_dist * precision_dist) / (recall_dist + precision_dist)
-        f1_rotate = 2 * (recall_rotate * precision_rotate) / (recall_rotate + precision_rotate)
+        f1_dist = 2 * (recall_dist * precision_dist) / \
+            (recall_dist + precision_dist)
+        f1_rotate = 2 * (recall_rotate * precision_rotate) / \
+            (recall_rotate + precision_rotate)
     else:
         n_tp = 0
         recall = 0
@@ -108,8 +113,10 @@ def get_score(th_idx, org_targets, org_predictions, n_gt, n_pr, keep_gt=False, r
         f1_dist = 0
         f1_rotate = 0
 
-    all_dist_accuracy, negative_dist_accuracy = calc_accuracy(result_flg, result_dist)
-    all_rotate_accuracy, negative_rotate_accuracy = calc_accuracy(result_flg, result_rotate,)
+    all_dist_accuracy, negative_dist_accuracy = calc_accuracy(
+        result_flg, result_dist)
+    all_rotate_accuracy, negative_rotate_accuracy = calc_accuracy(
+        result_flg, result_rotate,)
 
     result = {}
     result['ap{}'.format(th_idx)] = ap
@@ -122,18 +129,19 @@ def get_score(th_idx, org_targets, org_predictions, n_gt, n_pr, keep_gt=False, r
     result['all_dist_accuracy{}'.format(th_idx)] = all_dist_accuracy
     result['negative_dist_accuracy{}'.format(th_idx)] = negative_dist_accuracy
     result['all_rotate_accuracy{}'.format(th_idx)] = all_rotate_accuracy
-    result['negative_rotate_accuracy{}'.format(th_idx)] = negative_rotate_accuracy
-
+    result['negative_rotate_accuracy{}'.format(
+        th_idx)] = negative_rotate_accuracy
 
     return result
 
-def calc_map_score(targets, predictions, return_map_only=False, random_confidence=False):  
+
+def calc_map_score(targets, predictions, return_map_only=False, random_confidence=False):
     all_result = {}
     mean_result = {}
-    #count num of ground truth
+    # count num of ground truth
     n_gt = 0
     for i in range(len(targets)):
-        n_gt += len(targets[i]) 
+        n_gt += len(targets[i])
     all_result['n_gt'] = n_gt
     mean_result['n_gt'] = n_gt
 
@@ -143,12 +151,13 @@ def calc_map_score(targets, predictions, return_map_only=False, random_confidenc
         n_pr += len(predictions[i])
     all_result['n_pr'] = n_pr
     mean_result['n_pr'] = n_pr
-    
+
     ap_list = []
     max_workers = 10
     p = Pool(processes=max_workers)
     results = p.map(
-        partial(get_score, org_targets=targets, org_predictions=predictions, n_gt=n_gt, n_pr=n_pr, random_confidence=random_confidence),
+        partial(get_score, org_targets=targets, org_predictions=predictions,
+                n_gt=n_gt, n_pr=n_pr, random_confidence=random_confidence),
         list(range(10))
     )
 
@@ -164,11 +173,11 @@ def calc_map_score(targets, predictions, return_map_only=False, random_confidenc
     mean_result['mean_negative_rotate_accuracy'] = 0
 
     for result in results:
-        for k,v in result.items():
+        for k, v in result.items():
             if 'map_score' in k:
                 mean_result['map_score'] += v / 10
             if 'ap' in k:
-                mean_result['mean_ap'] += v / 10  
+                mean_result['mean_ap'] += v / 10
             if 'f1_score' in k:
                 mean_result['f1_score'] += v / 10
             if 'f1_dist' in k:
@@ -176,15 +185,15 @@ def calc_map_score(targets, predictions, return_map_only=False, random_confidenc
             if 'f1_rotate' in k:
                 mean_result['f1_rotate'] += v / 10
             if 'recall' in k:
-                mean_result['mean_recall'] += v / 10   
+                mean_result['mean_recall'] += v / 10
             if 'all_dist_accuracy' in k:
-                mean_result['mean_all_dist_accuracy'] += v / 10   
+                mean_result['mean_all_dist_accuracy'] += v / 10
             if 'all_rotate_accuracy' in k:
-                mean_result['mean_all_rotate_accuracy']  += v / 10   
+                mean_result['mean_all_rotate_accuracy'] += v / 10
             if 'negative_dist_accuracy' in k:
-                mean_result['mean_negative_dist_accuracy']  += v / 10   
+                mean_result['mean_negative_dist_accuracy'] += v / 10
             if 'negative_rotate_accuracy' in k:
-                mean_result['mean_negative_rotate_accuracy']  += v / 10                                                                                                                    
+                mean_result['mean_negative_rotate_accuracy'] += v / 10
             all_result[k] = v
 
     return all_result, mean_result

@@ -17,11 +17,11 @@ def get_optimizer(model, config):
         params = [
             {'params': encoder_parms, 'lr': config.optimizer.params.encoder_lr},
             {'params': decoder_parms, 'lr': config.optimizer.params.decoder_lr}
-        ]                
+        ]
     elif config.optimizer.params_type == 'weight_decay':
         no_decay = ['mean', 'std', 'bias'] + ['.bn%d.' % i for i in range(100)]
         params = [{'params': [], 'weight_decay': config.optimizer.params.weight_decay},
-            {'params': [], 'weight_decay': 0.0}]
+                  {'params': [], 'weight_decay': 0.0}]
         for n, p in model.named_parameters():
             if not any(nd in n for nd in no_decay):
                 # print("Decay: %s" % n)
@@ -50,18 +50,16 @@ def get_optimizer(model, config):
                     decoder_parms.append(p)
         params = [
             {'params': encoder_parms, 'lr': config.optimizer.params.encoder_lr},
-            {'params': encoder_parms_wd, 'lr': config.optimizer.params.encoder_lr, 'weight_decay': config.optimizer.params.weight_decay},
+            {'params': encoder_parms_wd, 'lr': config.optimizer.params.encoder_lr,
+                'weight_decay': config.optimizer.params.weight_decay},
             {'params': decoder_parms, 'lr': config.optimizer.params.decoder_lr},
-            {'params': decoder_parms_wd, 'lr': config.optimizer.params.decoder_lr, 'weight_decay': config.optimizer.params.weight_decay}
-        ]        
-
-
+            {'params': decoder_parms_wd, 'lr': config.optimizer.params.decoder_lr,
+                'weight_decay': config.optimizer.params.weight_decay}
+        ]
 
     if config.optimizer.name == "Adam":
-        optimizer = torch.optim.Adam(params, config.optimizer.params.encoder_lr)
+        optimizer = torch.optim.Adam(
+            params, config.optimizer.params.encoder_lr)
     elif config.optimizer.name == "SGD":
         optimizer = torch.optim.SGD(params, config.optimizer.params.encoder_lr)
     return optimizer
-
-
-

@@ -19,14 +19,17 @@ class HeatMapLoss(nn.Module):
         self.reduce = reduce
 
     def forward(self, prediction, mask_regr):
-        mask=mask_regr[:,0]
+        mask = mask_regr[:, 0]
         pred_mask = torch.sigmoid(prediction[:, 0])
 
         # Binary mask loss
         if self.focal:
-            mask_loss = mask * (1 - pred_mask)**2 * torch.log(pred_mask + 1e-12) + (1 - mask) * pred_mask**2 * torch.log(1 - pred_mask + 1e-12)
+            mask_loss = mask * (1 - pred_mask)**2 * torch.log(pred_mask + 1e-12) + (
+                1 - mask) * pred_mask**2 * torch.log(1 - pred_mask + 1e-12)
         else:
-            mask_loss = mask * torch.log(pred_mask + 1e-12) + (1 - mask) * torch.log(1 - pred_mask + 1e-12)
+            mask_loss = mask * \
+                torch.log(pred_mask + 1e-12) + (1 - mask) * \
+                torch.log(1 - pred_mask + 1e-12)
 
         if self.reduce == 'sum':
             mask_loss = -mask_loss.mean(0).sum()
@@ -38,7 +41,7 @@ class HeatMapLoss(nn.Module):
 
 
 def depth_transform(x):
-    return 1 / torch.sigmoid(x) -1
+    return 1 / torch.sigmoid(x) - 1
 
 
 class ZLoss(nn.Module):
@@ -47,14 +50,15 @@ class ZLoss(nn.Module):
         self.z_pos = z_pos
 
     def forward(self, prediction, mask_regr):
-        mask=mask_regr[:,0]
-        regr=mask_regr[:,self.z_pos]
+        mask = mask_regr[:, 0]
+        regr = mask_regr[:, self.z_pos]
         pred_mask = torch.sigmoid(prediction[:, 0])
         pred_regr = prediction[:, self.z_pos]
         pred_regr = depth_transform(pred_regr)
 
         # Regression L1 loss
-        regr_loss = (torch.abs(pred_regr - regr).sum(1) * mask).sum(1).sum(1) / mask.sum(1).sum(1)
+        regr_loss = (torch.abs(pred_regr - regr).sum(1) *
+                     mask).sum(1).sum(1) / mask.sum(1).sum(1)
         regr_loss = regr_loss.mean(0)
         return regr_loss
 
@@ -65,13 +69,14 @@ class PitchLoss(nn.Module):
         self.pitch_pos = pitch_pos
 
     def forward(self, prediction, mask_regr):
-        mask=mask_regr[:,0]
-        regr=mask_regr[:,self.pitch_pos]
+        mask = mask_regr[:, 0]
+        regr = mask_regr[:, self.pitch_pos]
         pred_mask = torch.sigmoid(prediction[:, 0])
         pred_regr = prediction[:, self.pitch_pos]
 
         # Regression L1 loss
-        regr_loss = (torch.abs(pred_regr - regr).sum(1) * mask).sum(1).sum(1) / mask.sum(1).sum(1)
+        regr_loss = (torch.abs(pred_regr - regr).sum(1) *
+                     mask).sum(1).sum(1) / mask.sum(1).sum(1)
         regr_loss = regr_loss.mean(0)
         return regr_loss
 
@@ -88,7 +93,7 @@ def get_criterion_and_callback(config):
             "heatmap": HeatMapLoss(
                 focal=config.loss.params.focal,
                 reduce=config.loss.params.reduce,
-                ),
+            ),
             "Z": ZLoss(z_pos=config.data.z_pos),
             "pitch": PitchLoss(pitch_pos=config.data.pitch_pos)
         }
@@ -117,7 +122,7 @@ def get_criterion_and_callback(config):
                     "loss_heatmap": config.loss.params.heatmap_weight,
                     "loss_z": config.loss.params.z_weight,
                     "loss_pitch": config.loss.params.pitch_weight
-                    },
+                },
             )
         ]
 

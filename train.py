@@ -24,16 +24,18 @@ def run(config_file, device_id, idx_fold):
 
     config = load_config(config_file)
 
-    #for n-folds loop
+    # for n-folds loop
     if config.data.params.idx_fold == -1:
         config.data.params.idx_fold = idx_fold
         config.work_dir = config.work_dir + '_fold{}'.format(idx_fold)
     elif config.data.params.idx_fold == 0:
         original_fold = int(config.work_dir.split('_fold')[1])
         if original_fold == idx_fold:
-            raise Exception('if you specify fold 0, you should use train.py or resume from fold 1.')
+            raise Exception(
+                'if you specify fold 0, you should use train.py or resume from fold 1.')
         config.data.params.idx_fold = idx_fold
-        config.work_dir = config.work_dir.split('_fold')[0] + '_fold{}'.format(idx_fold)
+        config.work_dir = config.work_dir.split(
+            '_fold')[0] + '_fold{}'.format(idx_fold)
     else:
         raise Exception('you should use train.py if idx_fold is specified.')
     print('info: training for fold {}'.format(idx_fold))
@@ -66,11 +68,11 @@ def run(config_file, device_id, idx_fold):
 
     # create segmentation model with pre trained encoder
     num_features = len(config.data.features)
-    print('info: num_features =',num_features)
+    print('info: num_features =', num_features)
     model = CenterNetFPN(
         slug=config.model.encoder,
         num_classes=num_features,
-        )
+    )
 
     optimizer = get_optimizer(model, config)
     scheduler = get_scheduler(optimizer, config)
@@ -80,7 +82,7 @@ def run(config_file, device_id, idx_fold):
 
     # train setting
     criterion, callbacks = get_criterion_and_callback(config)
-    
+
     if config.train.early_stop_patience > 0:
         callbacks.append(EarlyStoppingCallback(
             patience=config.train.early_stop_patience))

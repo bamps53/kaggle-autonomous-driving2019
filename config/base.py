@@ -18,7 +18,7 @@ def _get_default_config():
     c.data.height = 2710
     c.data.width = 3384
     c.data.model_scale = 4
-    c.data.pseudo_path =  False
+    c.data.pseudo_path = False
 
     # model
     c.model = edict()
@@ -39,12 +39,12 @@ def _get_default_config():
     c.train.accumulation_size = 0
     c.train.horizontal_flip = False
     c.train.fp16 = False
-    
+
     # test
     c.test = edict()
     c.test.batch_size = 16
     c.test.tta = False
-    
+
     # optimizer
     c.optimizer = edict()
     c.optimizer.name = 'Adam'

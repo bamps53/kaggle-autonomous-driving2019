@@ -25,6 +25,7 @@ from albumentations.pytorch import ToTensor
 
 HEIGHT, WIDTH = 2710 // 2, 3384
 
+
 def get_transforms(phase_config):
     list_transforms = []
     if phase_config.Noise:

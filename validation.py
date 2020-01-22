@@ -46,7 +46,6 @@ def run(config_file, fold=0, device_id=0):
         return_fnames=True,
     )
 
-
     # load model
     checkpoint_path = config.work_dir + '/checkpoints/best.pth'
     model = load_model(config_file, checkpoint_path)
@@ -60,8 +59,8 @@ def run(config_file, fold=0, device_id=0):
     with torch.no_grad():
         for i, (batch_images, batch_mask_regr, batch_image_ids) in enumerate(tqdm(validloader)):
             batch_preds = model(batch_images.to(config.device))
-            batch_preds[:,0] = torch.sigmoid(batch_preds[:,0])
-            batch_preds[:,z_pos] = depth_transform(batch_preds[:,z_pos])
+            batch_preds[:, 0] = torch.sigmoid(batch_preds[:, 0])
+            batch_preds[:, z_pos] = depth_transform(batch_preds[:, z_pos])
 
             batch_preds = batch_preds.data.cpu().numpy()
             batch_mask_regr = batch_mask_regr.data.cpu().numpy()
@@ -74,11 +73,13 @@ def run(config_file, fold=0, device_id=0):
                     img_size=(config.data.height, config.data.width),
                     confidence_threshold=config.test.confidence_threshold,
                     distance_threshold=config.test.distance_threshold,
-                    )
+                )
                 predictions.append(coords)
 
-                s = folds.loc[folds.ImageId == image_id.split('.jpg')[0], 'PredictionString'].values[0]
-                true_coords = str2coords(s, names=['id', 'yaw', 'pitch', 'roll', 'x', 'y', 'z'])
+                s = folds.loc[folds.ImageId == image_id.split(
+                    '.jpg')[0], 'PredictionString'].values[0]
+                true_coords = str2coords(
+                    s, names=['id', 'yaw', 'pitch', 'roll', 'x', 'y', 'z'])
                 targets.append(true_coords)
 
     with open(config.work_dir + '/predictions.pkl', 'wb') as f:
@@ -88,19 +89,21 @@ def run(config_file, fold=0, device_id=0):
 
     rows = []
     for p, i in zip(predictions, image_ids):
-        rows.append({'ImageId':i, 'PredictionString':coords2str(p)})
+        rows.append({'ImageId': i, 'PredictionString': coords2str(p)})
     pred_df = pd.DataFrame(rows)
-    pred_df.to_csv(config.work_dir +'/val_pred.csv', index=False)
+    pred_df.to_csv(config.work_dir + '/val_pred.csv', index=False)
 
     all_result, result = calc_map_score(targets, predictions)
-    result['confidence_threshold']=config.test.confidence_threshold
-    result['distance_threshold']=config.test.distance_threshold
+    result['confidence_threshold'] = config.test.confidence_threshold
+    result['distance_threshold'] = config.test.distance_threshold
 
-    dict_to_json(all_result, config.work_dir + '/all_result_th{}.json'.format(config.test.distance_threshold ))
-    dict_to_json(result, config.work_dir + '/result_th{}.json'.format(config.test.distance_threshold ))
+    dict_to_json(all_result, config.work_dir +
+                 '/all_result_th{}.json'.format(config.test.distance_threshold))
+    dict_to_json(result, config.work_dir +
+                 '/result_th{}.json'.format(config.test.distance_threshold))
 
     for k in sorted(result.keys()):
-        print(k,result[k])
+        print(k, result[k])
 
 
 def parse_args():

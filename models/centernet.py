@@ -19,9 +19,9 @@ except ImportError as e:
 
 
 def convert_to_inplace_relu(model):
-  for m in model.modules():
-    if isinstance(m, nn.ReLU):
-      m.inplace = True
+    for m in model.modules():
+        if isinstance(m, nn.ReLU):
+            m.inplace = True
 
 
 class FPN(nn.Module):
@@ -67,29 +67,31 @@ class FPN(nn.Module):
             num_bottleneck_filters = 2048
         elif slug == 'r50d':
             self.resnet = timm.create_model('gluon_resnet50_v1d',
-                pretrained=pretrained)
+                                            pretrained=pretrained)
             convert_to_inplace_relu(self.resnet)
             num_bottleneck_filters = 2048
         elif slug == 'r101d':
             self.resnet = timm.create_model('gluon_resnet101_v1d',
-                pretrained=pretrained)
+                                            pretrained=pretrained)
             convert_to_inplace_relu(self.resnet)
             num_bottleneck_filters = 2048
         elif slug == 'r152d':
             self.resnet = timm.create_model('gluon_resnet152_v1s',
-                pretrained=pretrained)
+                                            pretrained=pretrained)
             convert_to_inplace_relu(self.resnet)
             num_bottleneck_filters = 2048
         elif slug == 'efnetb7':
             self.resnet = timm.create_model('tf_efficientnet_b7',
-                pretrained=pretrained)
+                                            pretrained=pretrained)
             num_bottleneck_filters = 2048
         elif slug == 'serx50':
-            self.resnet = pretrainedmodels.se_resnext50_32x4d(pretrained='imagenet')
+            self.resnet = pretrainedmodels.se_resnext50_32x4d(
+                pretrained='imagenet')
             self.resnet.avg_pool = nn.AdaptiveAvgPool2d(1)
             num_bottleneck_filters = 2048
         elif slug == 'serx101':
-            self.resnet = pretrainedmodels.se_resnext101_32x4d(pretrained='imagenet')
+            self.resnet = pretrainedmodels.se_resnext101_32x4d(
+                pretrained='imagenet')
             self.resnet.avg_pool = nn.AdaptiveAvgPool2d(1)
             num_bottleneck_filters = 2048
 
@@ -126,11 +128,11 @@ class FPN(nn.Module):
 
         map4 = lateral4
         map3 = lateral3 + nn.functional.interpolate(map4, scale_factor=2,
-            mode="nearest")
+                                                    mode="nearest")
         map2 = lateral2 + nn.functional.interpolate(map3, scale_factor=2,
-            mode="nearest")
+                                                    mode="nearest")
         map1 = lateral1 + nn.functional.interpolate(map2, scale_factor=2,
-            mode="nearest")
+                                                    mode="nearest")
         # Reduce aliasing effect of upsampling
 
         map4 = self.smooth4(map4)
@@ -163,7 +165,7 @@ class CenterNetFPN(nn.Module):
     """
 
     def __init__(self, slug, num_classes=7, num_filters=128,
-            num_filters_fpn=256, upconv=False, pretrained=True):
+                 num_filters_fpn=256, upconv=False, pretrained=True):
         """Creates an `FPNSegmentation` instance for feature extraction.
         Args:
           slug: model slug e.g. 'r18', 'r101' for ResNet
@@ -182,17 +184,17 @@ class CenterNetFPN(nn.Module):
         # Feature Pyramid Network (FPN) with four feature maps of resolutions
         # 1/4, 1/8, 1/16, 1/32 and `num_filters` filters for all feature maps.
         self.fpn = FPN(slug=slug, num_filters=num_filters_fpn,
-                pretrained=pretrained)
+                       pretrained=pretrained)
         # The segmentation heads on top of the FPN
 
         self.head1 = nn.Sequential(Conv3x3(num_filters_fpn, num_filters),
-            Conv3x3(num_filters, num_filters))
+                                   Conv3x3(num_filters, num_filters))
         self.head2 = nn.Sequential(Conv3x3(num_filters_fpn, num_filters),
-            Conv3x3(num_filters, num_filters))
+                                   Conv3x3(num_filters, num_filters))
         self.head3 = nn.Sequential(Conv3x3(num_filters_fpn, num_filters),
-            Conv3x3(num_filters, num_filters))
+                                   Conv3x3(num_filters, num_filters))
         self.head4 = nn.Sequential(Conv3x3(num_filters_fpn, num_filters),
-            Conv3x3(num_filters, num_filters))
+                                   Conv3x3(num_filters, num_filters))
 
         self.hm = nn.Conv2d(4 * num_filters, 1, 3, padding=1)
 
@@ -206,9 +208,12 @@ class CenterNetFPN(nn.Module):
         )
 
         if upconv:
-            self.up8 = nn.ConvTranspose2d(num_filters, num_filters, 8, stride=8)
-            self.up4 = nn.ConvTranspose2d(num_filters, num_filters, 4, stride=4)
-            self.up2 = nn.ConvTranspose2d(num_filters, num_filters, 2, stride=2)
+            self.up8 = nn.ConvTranspose2d(
+                num_filters, num_filters, 8, stride=8)
+            self.up4 = nn.ConvTranspose2d(
+                num_filters, num_filters, 4, stride=4)
+            self.up2 = nn.ConvTranspose2d(
+                num_filters, num_filters, 2, stride=2)
         else:
             self.up8 = torch.nn.Upsample(scale_factor=8, mode='nearest')
             self.up4 = torch.nn.Upsample(scale_factor=4, mode='nearest')
@@ -222,7 +227,7 @@ class CenterNetFPN(nn.Module):
                 continue
             per_sample_centers = centers[sample_index][center_mask]
             emb = embeddings[sample_index][:, per_sample_centers[:, 1],
-                per_sample_centers[:, 0]].transpose(0, 1)
+                                           per_sample_centers[:, 0]].transpose(0, 1)
             gathered_embeddings.append(emb)
         gathered_embeddings = torch.cat(gathered_embeddings, 0)
 
@@ -251,7 +256,7 @@ class CenterNetFPN(nn.Module):
 
         if centers is not None:
             gathered_embeddings = self.gather_embeddings(classes_embedding,
-                centers)
+                                                         centers)
             classes = self.classes(gathered_embeddings.unsqueeze(
                 -1).unsqueeze(-1)).squeeze(-1).squeeze(-1)
 
@@ -274,7 +279,7 @@ class Conv3x3(nn.Module):
     def __init__(self, num_in, num_out):
         super().__init__()
         self.block = nn.Conv2d(num_in, num_out, kernel_size=3, padding=1,
-            bias=False)
+                               bias=False)
 
     def forward(self, x):
         return self.block(x)
