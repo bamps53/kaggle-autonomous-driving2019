@@ -1,5 +1,6 @@
 # Peking University/Baidu - Autonomous Driving
-This is the code for my part of 7th place solution in [Peking University/Baidu - Autonomous Driving](https://www.kaggle.com/c/pku-autonomous-driving/).
+This is the code for my part of 7th place solution in [Peking University/Baidu - Autonomous Driving](https://www.kaggle.com/c/pku-autonomous-driving/).  
+Our entire solution is in [this thread](https://www.kaggle.com/c/pku-autonomous-driving/discussion/127034)
 
 I started with [hocop1's really great kernel](https://www.kaggle.com/hocop1/centernet-baseline), so basic part of my code is based on his.
 My main contributions are below:
